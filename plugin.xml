@@ -50,7 +50,8 @@
 		</js-module>
 		<header-file src="src/ios/CDVShake.h" />
 		<source-file src="src/ios/CDVShake.m" />
-		<hook type="after_plugin_install" src="src/ios/hooks/patchMainViewController.js" />
+		<header-file src="src/ios/CDVViewController+Shake.h" />
+		<source-file src="src/ios/CDVViewController+Shake.m" />
 	</platform>
 	<platform name="ubuntu">
 		<js-module src="www/shake.js" name="Shake">
