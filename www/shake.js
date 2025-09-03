@@ -1,4 +1,3 @@
-
 module.exports = (function () {
     "use strict";
     var shake = {};
@@ -18,6 +17,18 @@ module.exports = (function () {
     var shakeCallBack = null;
     var sensitivity = 30;
 
+    // W3C Device Motion event handler
+    var onDeviceMotion = function(event) {
+        var acceleration = event.acceleration || event.accelerationIncludingGravity;
+        if (!acceleration) return;
+
+        assessCurrentAcceleration({
+            x: acceleration.x || 0,
+            y: acceleration.y || 0,
+            z: acceleration.z || 0
+        });
+    };
+
     // Start watching the accelerometer for a shake gesture
     shake.startWatch = function (onShake, _sensitivity, onError) {
         if (typeof (onShake) !== "function") {
@@ -30,21 +41,35 @@ module.exports = (function () {
 
         shakeCallBack = debounce(onShake);
 
-        watchId = navigator.accelerometer.watchAcceleration(assessCurrentAcceleration, onError, options);
+        // Try W3C Device Motion API first
+        if (window.DeviceMotionEvent) {
+            window.addEventListener('devicemotion', onDeviceMotion, false);
+        } else if (navigator.accelerometer) {
+            // Fallback to deprecated plugin
+            watchId = navigator.accelerometer.watchAcceleration(assessCurrentAcceleration, onError, options);
+        } else if (onError) {
+            onError("Motion detection not supported");
+        }
     };
 
     // Stop watching the accelerometer for a shake gesture
     shake.stopWatch = function () {
+        // Remove W3C event listener
+        if (window.DeviceMotionEvent) {
+            window.removeEventListener('devicemotion', onDeviceMotion, false);
+        }
+
+        // Clear accelerometer watch
         if (watchId !== null) {
             navigator.accelerometer.clearWatch(watchId);
             watchId = null;
-
-            previousAcceleration = {
-                x: null,
-                y: null,
-                z: null
-            };
         }
+
+        previousAcceleration = {
+            x: null,
+            y: null,
+            z: null
+        };
     };
 
     // Assess the current acceleration parameters to determine a shake
